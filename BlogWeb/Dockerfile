@@ -11,6 +11,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 COPY .env.production .env.production
 
+ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_URL=http://liuzirui.top
 RUN npm run build
 
 FROM node:20-alpine
