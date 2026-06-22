@@ -25,6 +25,7 @@ services:
     restart: always
     expose:
       - "4000"
+      - "4001"
     environment:
       DB_HOST: mysql
       DB_PORT: 3306

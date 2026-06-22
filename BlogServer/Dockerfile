@@ -24,5 +24,5 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 COPY --from=build /app/build/blogserver .
 
-EXPOSE 4000
+EXPOSE 4000 4001
 CMD ["./blogserver"]
