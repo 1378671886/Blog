@@ -5,6 +5,7 @@
 #include <cstring>
 #include "db.h"
 #include "handlers.h"
+#include "voice_ws.h"
 
 int main() {
     // ────── 读环境变量（带默认值）──────
@@ -18,7 +19,7 @@ int main() {
     std::string host = dbHost ? dbHost : "localhost";
     int dbPortNum    = dbPort ? std::stoi(dbPort) : 3306;
     std::string user = dbUser ? dbUser : "root";
-    std::string pass = dbPass ? dbPass : "";
+    std::string pass = dbPass ? dbPass : "LIUzr-040916";
     std::string name = dbName ? dbName : "blog";
     int serverPort   = srvPort ? std::stoi(srvPort) : 4000;
 
@@ -33,6 +34,11 @@ int main() {
 
     // ────── 1. 初始化网络 ──────
     initNet();
+
+    // ────── 启动语音 WebSocket 服务器 ──────
+    const char* voicePort = std::getenv("VOICE_PORT");
+    int vPort = voicePort ? std::stoi(voicePort) : 4001;
+    startVoiceServer(vPort);
 
     // ────── 2. socket：创建一个通信端点 ──────
     int serverSock = socket(AF_INET, SOCK_STREAM, 0);

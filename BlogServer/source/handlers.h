@@ -168,5 +168,61 @@ inline std::string handleRequest(const char* raw) {
         return buildHttp(200, resp.dump());
     }
 
+    // ────── 房间管理 ──────
+    // POST /api/rooms
+    if (req.method == "POST" && req.uri == "/api/rooms") {
+        std::string auth = req.header("Authorization");
+        if (auth.size() < 8 || auth.substr(0, 7) != "Bearer ")
+            return buildHttp(401, "{\"error\":\"未登录\"}");
+        int userId = verifyToken(auth.substr(7));
+        if (userId == -1)
+            return buildHttp(401, "{\"error\":\"token无效或已过期\"}");
+
+        try {
+            json j = json::parse(req.body);
+            std::string roomId = j["roomId"];
+            if (roomId.empty() || roomId.size() > 50)
+                return buildHttp(400, "{\"error\":\"房间号不合法\"}");
+
+            auto existing = g_db->findRoom(roomId);
+            if (existing.id != -1)
+                return buildHttp(409, "{\"error\":\"房间号已存在\"}");
+
+            int id = g_db->createRoom(roomId, userId);
+            if (id == -1)
+                return buildHttp(500, "{\"error\":\"创建房间失败\"}");
+
+            json resp = {{"message", "房间创建成功"}, {"roomId", roomId}, {"id", id}};
+            return buildHttp(200, resp.dump());
+        } catch (...) {
+            return buildHttp(400, "{\"error\":\"请求格式错误\"}");
+        }
+    }
+
+    // GET /api/rooms
+    if (req.method == "GET" && req.uri == "/api/rooms") {
+        auto rooms = g_db->listRooms();
+        json arr = json::array();
+        for (auto& r : rooms) {
+            arr.push_back({{"id", r.id}, {"roomId", r.roomId}, {"creatorId", r.creatorId}, {"createdAt", r.createdAt}});
+        }
+        return buildHttp(200, arr.dump());
+    }
+
+    // DELETE /api/rooms/{roomId}
+    if (req.method == "DELETE" && req.uri.find("/api/rooms/") == 0) {
+        std::string auth = req.header("Authorization");
+        if (auth.size() < 8 || auth.substr(0, 7) != "Bearer ")
+            return buildHttp(401, "{\"error\":\"未登录\"}");
+        int userId = verifyToken(auth.substr(7));
+        if (userId == -1)
+            return buildHttp(401, "{\"error\":\"token无效或已过期\"}");
+
+        std::string roomId = req.uri.substr(11); // 去掉 "/api/rooms/"
+        if (g_db->deleteRoom(roomId, userId))
+            return buildHttp(200, "{\"message\":\"房间已删除\"}");
+        return buildHttp(404, "{\"error\":\"房间不存在或无权删除\"}");
+    }
+
     return buildHttp(404, "{\"error\":\"Not Found\"}");
 }

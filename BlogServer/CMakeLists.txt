@@ -19,7 +19,10 @@ else()
 endif()
 
 # ────── 源文件 ──────
-add_executable(blogserver source/main.cpp)
+add_executable(blogserver
+    source/main.cpp
+    deps/mongoose.c
+)
 
 target_include_directories(blogserver PRIVATE ${MYSQL_INCLUDE_DIR})
 target_link_libraries(blogserver ${MYSQL_LIBRARY})

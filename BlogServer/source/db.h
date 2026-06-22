@@ -148,6 +148,105 @@ public:
         return results;
     }
 
+    // ────── 房间管理 ──────
+    struct Room { int id; std::string roomId; int creatorId; std::string createdAt; };
+
+    int createRoom(const std::string& roomId, int creatorId) {
+        const char* sql = "INSERT INTO rooms (room_id, creator_id) VALUES (?, ?)";
+        MYSQL_STMT* stmt = mysql_stmt_init(conn_);
+        if (!stmt) return -1;
+        mysql_stmt_prepare(stmt, sql, strlen(sql));
+        MYSQL_BIND bind[2];
+        memset(bind, 0, sizeof(bind));
+        bind[0].buffer_type = MYSQL_TYPE_STRING;
+        bind[0].buffer = (char*)roomId.c_str();
+        bind[0].buffer_length = roomId.size();
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = &creatorId;
+        mysql_stmt_bind_param(stmt, bind);
+        if (mysql_stmt_execute(stmt) != 0) {
+            mysql_stmt_close(stmt);
+            return -1;
+        }
+        int id = (int)mysql_stmt_insert_id(stmt);
+        mysql_stmt_close(stmt);
+        return id;
+    }
+
+    Room findRoom(const std::string& roomId) {
+        Room r{-1, "", 0, ""};
+        MYSQL_STMT* stmt = mysql_stmt_init(conn_);
+        if (!stmt) return r;
+        const char* sql = "SELECT id, room_id, creator_id, created_at FROM rooms WHERE room_id = ?";
+        mysql_stmt_prepare(stmt, sql, strlen(sql));
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+        bind[0].buffer_type = MYSQL_TYPE_STRING;
+        bind[0].buffer = (char*)roomId.c_str();
+        bind[0].buffer_length = roomId.size();
+        mysql_stmt_bind_param(stmt, bind);
+
+        int id, cid;
+        char rid[51] = {}, cat[32] = {};
+        MYSQL_BIND rb[4];
+        memset(rb, 0, sizeof(rb));
+        rb[0].buffer_type = MYSQL_TYPE_LONG; rb[0].buffer = &id;
+        rb[1].buffer_type = MYSQL_TYPE_STRING; rb[1].buffer = rid; rb[1].buffer_length = sizeof(rid) - 1;
+        rb[2].buffer_type = MYSQL_TYPE_LONG; rb[2].buffer = &cid;
+        rb[3].buffer_type = MYSQL_TYPE_STRING; rb[3].buffer = cat; rb[3].buffer_length = sizeof(cat) - 1;
+        mysql_stmt_bind_result(stmt, rb);
+
+        mysql_stmt_execute(stmt);
+        mysql_stmt_store_result(stmt);
+        if (mysql_stmt_fetch(stmt) == 0) {
+            r = {id, rid, cid, cat};
+        }
+        mysql_stmt_close(stmt);
+        return r;
+    }
+
+    std::vector<Room> listRooms() {
+        std::vector<Room> results;
+        MYSQL_STMT* stmt = mysql_stmt_init(conn_);
+        if (!stmt) return results;
+        const char* sql = "SELECT id, room_id, creator_id, created_at FROM rooms ORDER BY created_at DESC";
+        mysql_stmt_prepare(stmt, sql, strlen(sql));
+        int id, cid;
+        char rid[51] = {}, cat[32] = {};
+        MYSQL_BIND rb[4];
+        memset(rb, 0, sizeof(rb));
+        rb[0].buffer_type = MYSQL_TYPE_LONG; rb[0].buffer = &id;
+        rb[1].buffer_type = MYSQL_TYPE_STRING; rb[1].buffer = rid; rb[1].buffer_length = sizeof(rid) - 1;
+        rb[2].buffer_type = MYSQL_TYPE_LONG; rb[2].buffer = &cid;
+        rb[3].buffer_type = MYSQL_TYPE_STRING; rb[3].buffer = cat; rb[3].buffer_length = sizeof(cat) - 1;
+        mysql_stmt_bind_result(stmt, rb);
+        mysql_stmt_execute(stmt);
+        mysql_stmt_store_result(stmt);
+        while (mysql_stmt_fetch(stmt) == 0) {
+            results.push_back({id, rid, cid, cat});
+        }
+        mysql_stmt_close(stmt);
+        return results;
+    }
+
+    bool deleteRoom(const std::string& roomId, int creatorId) {
+        const char* sql = "DELETE FROM rooms WHERE room_id = ? AND creator_id = ?";
+        MYSQL_STMT* stmt = mysql_stmt_init(conn_);
+        if (!stmt) return false;
+        mysql_stmt_prepare(stmt, sql, strlen(sql));
+        MYSQL_BIND bind[2];
+        memset(bind, 0, sizeof(bind));
+        bind[0].buffer_type = MYSQL_TYPE_STRING;
+        bind[0].buffer = (char*)roomId.c_str();
+        bind[0].buffer_length = roomId.size();
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = &creatorId;
+        mysql_stmt_bind_param(stmt, bind);
+        bool ok = mysql_stmt_execute(stmt) == 0 && mysql_stmt_affected_rows(stmt) > 0;
+        mysql_stmt_close(stmt);
+        return ok;
+    }
+
 private:
     MYSQL* conn_;
 };
