@@ -18,8 +18,24 @@ export function useWebRTC(options: UseWebRTCOptions) {
 
   const rtcConfig: RTCConfiguration = {
     iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
+      {
+        urls: [
+          "stun:liuzirui.top:3478",
+          "turn:liuzirui.top:3478?transport=udp",
+        ],
+        username: "turnuser",
+        credential: "Vo!ceTURN_2024_liuzirui",
+      },
+      {
+        urls: "turn:liuzirui.top:3478?transport=tcp",
+        username: "turnuser",
+        credential: "Vo!ceTURN_2024_liuzirui",
+      },
+      {
+        urls: "turns:liuzirui.top:5349?transport=tcp",
+        username: "turnuser",
+        credential: "Vo!ceTURN_2024_liuzirui",
+      },
     ],
   };
 
