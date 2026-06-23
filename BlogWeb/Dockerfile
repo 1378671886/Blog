@@ -12,7 +12,7 @@ COPY . .
 COPY .env.production .env.production
 
 ENV NODE_ENV=production
-ENV NEXT_PUBLIC_API_URL=http://liuzirui.top
+ENV NEXT_PUBLIC_API_URL=https://liuzirui.top
 RUN npm run build
 
 FROM node:20-alpine
