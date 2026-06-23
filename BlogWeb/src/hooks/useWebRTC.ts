@@ -16,6 +16,13 @@ export function useWebRTC(options: UseWebRTCOptions) {
   const myUserIdRef = useRef<number | null>(null);
   const negotiatingRef = useRef<Set<number>>(new Set());
 
+  const rtcConfig: RTCConfiguration = {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+    ],
+  };
+
   const isPolite = useCallback((otherUserId: number): boolean => {
     return (myUserIdRef.current ?? 0) > otherUserId;
   }, []);
@@ -66,7 +73,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
 
     let pc = peersRef.current.get(userId);
     if (!pc) {
-      pc = new RTCPeerConnection({ iceServers: [] });
+      pc = new RTCPeerConnection(rtcConfig);
       peersRef.current.set(userId, pc);
       setupPeerHandlers(pc, userId);
     }
@@ -111,7 +118,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
         closePeerConnection(fromUserId);
       }
       if (!pc) {
-        pc = new RTCPeerConnection({ iceServers: [] });
+        pc = new RTCPeerConnection(rtcConfig);
         peersRef.current.set(fromUserId, pc);
         setupPeerHandlers(pc, fromUserId);
       }
