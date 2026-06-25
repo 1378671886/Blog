@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAudioCapture } from "@/hooks/useAudioCapture";
+import { useSFUAudio } from "@/hooks/useSFUAudio";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useWebSocket } from "@/hooks/useWebSocket";
 
@@ -25,6 +26,10 @@ export default function VoiceRoom() {
   const [ready, setReady] = useState(false);
   const [micOn, setMicOn] = useState(false);
   const [testMicOn, setTestMicOn] = useState(false);
+  const [voiceMode, setVoiceMode] = useState<"p2p" | "sfu">("p2p");
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
+  const myUserIdRef = useRef<number>(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<{ userId: number; username: string }[]>([]);
   const [input, setInput] = useState("");
@@ -82,14 +87,13 @@ export default function VoiceRoom() {
       if (msg.type === "users") {
         const list = msg.users as Array<{userId: number; username: string}>;
         setUsers(list);
-        if (mic.stream.current) {
-          const myId = list.find((u) => u.username === username)?.userId;
-          if (myId) {
-            rtc.setLocalStream(mic.stream.current, myId);
-            if (prevUsersLen.current === 0 && list.length > 1) {
-              for (const u of list) {
-                if (u.userId !== myId) rtc.createOfferForPeer(u.userId);
-              }
+        const myId = list.find((u) => u.username === username)?.userId;
+        if (myId) myUserIdRef.current = myId;
+        if (mic.stream.current && myId) {
+          rtc.setLocalStream(mic.stream.current, myId);
+          if (prevUsersLen.current === 0 && list.length > 1) {
+            for (const u of list) {
+              if (u.userId !== myId) rtc.createOfferForPeer(u.userId);
             }
           }
         }
@@ -105,7 +109,9 @@ export default function VoiceRoom() {
       } else if (msg.type === "peer-joined") {
         // 新用户加入，已在线用户准备接收 offer
       } else if (msg.type === "peer-left") {
-        rtc.closePeerConnection(msg.userId as number);
+        const uid = msg.userId as number;
+        rtc.closePeerConnection(uid);
+        sfuRef.current.removePlayer(uid);
       } else if (
         msg.type === "sdp-offer" ||
         msg.type === "sdp-answer" ||
@@ -117,31 +123,61 @@ export default function VoiceRoom() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
-  const ws = useWebSocket(wsUrl, { token, onText: handleText, enabled: !!token });
+  const handleBinary = useCallback((data: ArrayBuffer) => {
+    sfuRef.current.handleBinary(data);
+  }, []);
+
+  const ws = useWebSocket(wsUrl, { token, onText: handleText, onBinary: handleBinary, enabled: !!token });
 
   sendTextRef.current = ws.sendText ?? (() => {});
   webRTCHandlersRef.current = webRTC;
 
   const mic = useAudioCapture({});
 
+  // SFU 发送：拼接 userId 头
+  const sendBinaryRef = useRef<(data: ArrayBuffer) => void>(() => {});
+  const sendSfuBinary = useCallback((data: ArrayBuffer) => {
+    const uid = myUserIdRef.current;
+    if (!uid) return;
+    const header = new ArrayBuffer(4);
+    new DataView(header).setUint32(0, uid, true);
+    const combined = new Uint8Array(4 + data.byteLength);
+    combined.set(new Uint8Array(header), 0);
+    combined.set(new Uint8Array(data), 4);
+    sendBinaryRef.current(combined.buffer);
+  }, []);
+  const sfuAudio = useSFUAudio({ sendBinary: sendSfuBinary });
+  const sfuRef = useRef(sfuAudio);
+  sfuRef.current = sfuAudio;
+  sendBinaryRef.current = ws.send ?? (() => {});
+
   const toggleMic = async () => {
     if (micOn) {
-      webRTC.setMicEnabled(false);
+      if (voiceMode === "p2p") {
+        webRTC.setMicEnabled(false);
+      } else {
+        sfuAudio.setMicEnabled(false);
+      }
       setMicOn(false);
     } else {
-      if (!mic.stream.current) {
-        await mic.start();
-        if (mic.stream.current) {
-          const myId = users.find((u) => u.username === username)?.userId;
-          webRTC.setLocalStream(mic.stream.current, myId);
-          for (const u of users) {
-            if (u.userId !== myId) {
-              webRTC.createOfferForPeer(u.userId);
+      if (voiceMode === "p2p") {
+        if (!mic.stream.current) {
+          await mic.start();
+          if (mic.stream.current) {
+            const myId = users.find((u) => u.username === username)?.userId;
+            webRTC.setLocalStream(mic.stream.current, myId);
+            for (const u of users) {
+              if (u.userId !== myId) {
+                webRTC.createOfferForPeer(u.userId);
+              }
             }
           }
+        } else {
+          webRTC.setMicEnabled(true);
         }
       } else {
-        webRTC.setMicEnabled(true);
+        // SFU 模式
+        await sfuAudio.start();
       }
       setMicOn(true);
     }
@@ -191,8 +227,10 @@ export default function VoiceRoom() {
     const ta = testAudioRef;
     const ts = testStreamRef;
     const ra = remoteAudioRef;
+    const sfu = sfuRef.current;
     return () => {
       if (m.recording) m.stop();
+      sfu.stop();
       ta.current?.close();
       ts.current?.getTracks().forEach((t) => t.stop());
       ra.current.forEach((audio) => { audio.pause(); audio.srcObject = null; });
@@ -271,6 +309,55 @@ export default function VoiceRoom() {
               ws.state === "connecting" ? "bg-amber-400 animate-pulse" : "bg-gray-500"
             }`} />
             <span className="text-gray-500 text-xs">{statusText}</span>
+          </div>
+
+          {/* 语音模式切换 */}
+          <div className="relative" ref={modeMenuRef}>
+            <button
+              onClick={() => setShowModeMenu(!showModeMenu)}
+              onMouseEnter={() => setShowModeMenu(true)}
+              onMouseLeave={() => setShowModeMenu(false)}
+              className="w-full py-2 rounded-lg text-sm font-medium bg-[#2a2a2a] text-gray-400 border border-gray-700 hover:bg-[#333] transition-all"
+            >
+              {voiceMode === "p2p" ? "🔗 P2P 模式" : "📡 SFU 模式"}
+            </button>
+            {showModeMenu && (
+              <div
+                onMouseEnter={() => setShowModeMenu(true)}
+                onMouseLeave={() => setShowModeMenu(false)}
+                className="absolute bottom-full left-0 w-full pb-1 z-10"
+              >
+                <div className="bg-[#333] border border-gray-600 rounded-lg shadow-lg overflow-hidden">
+                  <button
+                    onClick={() => {
+                      setShowModeMenu(false);
+                      if (voiceMode === "sfu") {
+                        if (micOn) { mic.stop(); setMicOn(false); }
+                        sfuAudio.stop();
+                        setVoiceMode("p2p");
+                      }
+                    }}
+                    className={`w-full px-3 py-2 text-xs text-left hover:bg-[#444] flex items-center gap-2 ${voiceMode === "p2p" ? "text-emerald-400" : "text-gray-400"}`}
+                  >
+                    <span>{voiceMode === "p2p" ? "●" : "○"}</span>
+                    P2P 直连
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowModeMenu(false);
+                      if (voiceMode === "p2p") {
+                        if (micOn) { webRTC.setMicEnabled(false); setMicOn(false); }
+                        setVoiceMode("sfu");
+                      }
+                    }}
+                    className={`w-full px-3 py-2 text-xs text-left hover:bg-[#444] flex items-center gap-2 ${voiceMode === "sfu" ? "text-emerald-400" : "text-gray-400"}`}
+                  >
+                    <span>{voiceMode === "sfu" ? "●" : "○"}</span>
+                    SFU 中转
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <button

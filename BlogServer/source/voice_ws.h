@@ -73,12 +73,20 @@ static void broadcast_chat(const std::string& roomId, const std::string& jsonStr
     }
 }
 
-static void broadcast_audio(const std::string& roomId, const void *data, size_t len, struct mg_connection *sender) {
+static void broadcast_audio(const std::string& roomId, const void *data, size_t len,
+                             struct mg_connection *sender, int senderUserId) {
     auto it = g_rooms.find(roomId);
     if (it == g_rooms.end()) return;
+    // 构造带 userId 头的二进制帧: [4字节 userId LE] [opus 数据]
+    std::vector<char> buf(4 + len);
+    buf[0] = (senderUserId) & 0xff;
+    buf[1] = (senderUserId >> 8) & 0xff;
+    buf[2] = (senderUserId >> 16) & 0xff;
+    buf[3] = (senderUserId >> 24) & 0xff;
+    memcpy(buf.data() + 4, data, len);
     for (auto &c : it->second) {
         if (c.conn != sender) {
-            mg_ws_send(c.conn, data, len, WEBSOCKET_OP_BINARY);
+            mg_ws_send(c.conn, buf.data(), buf.size(), WEBSOCKET_OP_BINARY);
         }
     }
 }
@@ -180,7 +188,7 @@ static void voice_handler(struct mg_connection *c, int ev, void *ev_data) {
             for (auto &[rid, clients] : g_rooms) {
                 for (auto &vc : clients) {
                     if (vc.conn == c) {
-                        broadcast_audio(rid, wm->data.buf, wm->data.len, c);
+                        broadcast_audio(rid, wm->data.buf, wm->data.len, c, vc.userId);
                         return;
                     }
                 }
