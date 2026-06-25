@@ -246,18 +246,23 @@ export default function VoiceRoom() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const sfuStartingRef = useRef(false);
+
   // SFU 模式：进入房间自动连接（不依赖开麦），确保所有人能接收音频
   useEffect(() => {
     if (voiceMode !== "sfu") return;
-    // 断线后重置标记，允许重连
-    if (!pionSFU.recording && sfuConnectingRef.current) {
+    // 断线后重置标记，允许重连（但 start() 进行中不重置，防止双重启动）
+    if (!pionSFU.recording && sfuConnectingRef.current && !sfuStartingRef.current) {
       sfuConnectingRef.current = false;
     }
-    if (sfuConnectingRef.current) return;
+    if (sfuConnectingRef.current || sfuStartingRef.current) return;
     const myId = myUserIdRef.current;
     if (!myId) return;
     sfuConnectingRef.current = true;
-    pionSFU.start().then(() => {
+    sfuStartingRef.current = true;
+    pionSFU.start().finally(() => {
+      sfuStartingRef.current = false;
+    }).then(() => {
       // 连接建立后默认静音，用户点开麦才启用 track
       pionSFU.setMicEnabled(false);
     });
