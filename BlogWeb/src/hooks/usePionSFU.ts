@@ -114,24 +114,29 @@ export function usePionSFU(options: UsePionSFUOptions) {
         ws.send(JSON.stringify({ type: "offer", sdp: pc.localDescription!.sdp }));
       };
 
-      ws.onmessage = async (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          if (msg.type === "answer") {
-            await pc.setRemoteDescription({ type: "answer", sdp: msg.sdp });
-          } else if (msg.type === "offer") {
-            await pc.setRemoteDescription({ type: "offer", sdp: msg.sdp });
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            ws.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
-          } else if (msg.type === "ice") {
-            await pc.addIceCandidate({
-              candidate: msg.candidate,
-              sdpMid: msg.sdpMid,
-              sdpMLineIndex: msg.sdpMLineIndex,
-            });
-          }
-        } catch {}
+      let msgQueue = Promise.resolve();
+
+      ws.onmessage = (event) => {
+        const data = event.data as string;
+        msgQueue = msgQueue.then(async () => {
+          try {
+            const msg = JSON.parse(data);
+            if (msg.type === "answer") {
+              await pc.setRemoteDescription({ type: "answer", sdp: msg.sdp });
+            } else if (msg.type === "offer") {
+              await pc.setRemoteDescription({ type: "offer", sdp: msg.sdp });
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+              ws.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
+            } else if (msg.type === "ice") {
+              await pc.addIceCandidate({
+                candidate: msg.candidate,
+                sdpMid: msg.sdpMid,
+                sdpMLineIndex: msg.sdpMLineIndex,
+              });
+            }
+          } catch {}
+        });
       };
 
       ws.onerror = () => stop();
