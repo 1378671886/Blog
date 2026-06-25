@@ -176,6 +176,48 @@ export default function BlogPage() {
             <h2 className="text-3xl font-bold mb-2 text-white">欢迎来访 👋</h2>
             <p className="text-gray-400 mb-12 text-lg">记录想法，分享学习。</p>
 
+            {/* 栏目导航 */}
+            <div className="grid gap-6 md:grid-cols-3 mb-12">
+              <Link
+                href="/blog/ue"
+                className="group rounded-xl p-6 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
+              >
+                <span className="text-3xl block mb-3">🎮</span>
+                <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
+                  UE项目介绍
+                </h3>
+                <p className="mt-1 text-sm text-gray-400">
+                  UE 游戏开发项目展示与视频演示
+                </p>
+              </Link>
+              <Link
+                href="/blog/about"
+                className="group rounded-xl p-6 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
+              >
+                <span className="text-3xl block mb-3">👤</span>
+                <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
+                  关于我
+                </h3>
+                <p className="mt-1 text-sm text-gray-400">
+                  了解更多关于我和这个博客
+                </p>
+              </Link>
+              <Link
+                href="/voice"
+                className="group rounded-xl p-6 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
+              >
+                <span className="text-3xl block mb-3">🎙️</span>
+                <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
+                  实时语音
+                </h3>
+                <p className="mt-1 text-sm text-gray-400">
+                  探索语音交互功能
+                </p>
+              </Link>
+            </div>
+
+            <h3 className="text-xl font-semibold text-white mb-6">📝 最新文章</h3>
+
             <div className="grid gap-8 md:grid-cols-2">
               {posts.map((post) => (
                 <Link
