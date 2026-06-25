@@ -66,15 +66,19 @@ export function usePionSFU(options: UsePionSFUOptions) {
         ? `ws://localhost:8080/sfu-ws?room=${roomId}&user=${userId}`
         : `wss://liuzirui.top/sfu-ws?room=${roomId}&user=${userId}`;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
-      streamRef.current = stream;
-
       const pc = new RTCPeerConnection(rtcConfig);
       pcRef.current = pc;
 
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      // 尝试获取本地媒体，失败则不发送（仅接收模式，如移动端缺少用户手势）
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+        streamRef.current = stream;
+        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      } catch {
+        pc.addTransceiver("audio", { direction: "recvonly" });
+      }
 
       pc.ontrack = (event) => {
         console.log("[SFU] ontrack fired, streams:", event.streams, "track:", event.track);
@@ -168,9 +172,23 @@ export function usePionSFU(options: UsePionSFUOptions) {
   }, [userIdRef, roomId, isLocal, stop]);
 
   const setMicEnabled = useCallback((enabled: boolean) => {
-    streamRef.current?.getAudioTracks().forEach((t) => {
-      t.enabled = enabled;
-    });
+    if (!enabled) {
+      streamRef.current?.getAudioTracks().forEach((t) => { t.enabled = false; });
+      return;
+    }
+    // 开启 mic：如果之前没有获取到媒体（如移动端自动连接时被拒绝），现在获取
+    if (!streamRef.current) {
+      navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      }).then((stream) => {
+        streamRef.current = stream;
+        stream.getTracks().forEach((track) => {
+          if (pcRef.current) pcRef.current.addTrack(track, stream);
+        });
+      }).catch(() => {});
+      return;
+    }
+    streamRef.current.getAudioTracks().forEach((t) => { t.enabled = true; });
   }, []);
 
   const removePlayer = useCallback((userId: number) => {
