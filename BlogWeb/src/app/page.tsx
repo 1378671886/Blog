@@ -18,10 +18,10 @@ export default function Landing() {
           Welcome to my world
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-6 justify-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mx-auto w-full max-w-lg">
           <Link
             href="/blog"
-            className="group px-10 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 hover:bg-white/20 transition-all duration-300"
+            className="group px-10 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 hover:bg-white/20 transition-all duration-300 text-center"
           >
             <span className="block text-white text-2xl font-semibold mb-1">
               📝 博客
@@ -33,13 +33,25 @@ export default function Landing() {
 
           <Link
             href="/voice"
-            className="group px-10 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 hover:bg-white/20 transition-all duration-300"
+            className="group px-10 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 hover:bg-white/20 transition-all duration-300 text-center"
           >
             <span className="block text-white text-2xl font-semibold mb-1">
               🎙️ 实时语音
             </span>
             <span className="text-sm text-gray-300">
               探索语音交互
+            </span>
+          </Link>
+
+          <Link
+            href="/blog/ue"
+            className="group px-10 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 hover:bg-white/20 transition-all duration-300 text-center"
+          >
+            <span className="block text-white text-2xl font-semibold mb-1">
+              🎮 UE 项目
+            </span>
+            <span className="text-sm text-gray-300">
+              UE求职项目演示
             </span>
           </Link>
         </div>

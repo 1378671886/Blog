@@ -27,6 +27,9 @@ export default function UEPage() {
               <Link href="/blog" className="hover:text-white transition-colors">
                 博客
               </Link>
+              <Link href="/blog/ue" className="hover:text-white transition-colors">
+                专栏
+              </Link>
               <Link href="#" className="hover:text-white transition-colors">
                 语音
               </Link>
@@ -46,22 +49,23 @@ export default function UEPage() {
 
         {/* 标题区 */}
         <div className="pt-24 pb-8 px-6 md:px-12 lg:px-16">
-          <h1 className="text-3xl font-bold text-white">UE 项目展示</h1>
-          <p className="text-gray-400 mt-2">Unreal Engine 项目介绍与视频展示</p>
+          <h1 className="text-3xl font-bold text-white" style={{ textShadow: "0 2px 12px rgba(0,0,0,0.6)" }}>UE 项目展示</h1>
+          <p className="text-white/80 mt-2" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.4)" }}>Unreal Engine 项目介绍与视频展示</p>
         </div>
 
         {/* 项目卡片 */}
         <div className="max-w-4xl mx-auto px-6 pb-16">
           {projects.length === 0 ? (
-            <p className="text-gray-400 text-center py-16">暂无项目，敬请期待</p>
+            <p className="text-white/60 text-center py-16">暂无项目，敬请期待</p>
           ) : (
-            <div className="grid gap-8 md:grid-cols-2">
+            <div className="grid gap-6">
               {projects.map((project) => (
-                <div
+                <Link
                   key={project.slug}
-                  className="group rounded-xl overflow-hidden border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm"
+                  href={`/blog/ue/${project.slug}`}
+                  className="group rounded-xl overflow-hidden border border-white/15 hover:border-white/40 transition-all bg-white/10 backdrop-blur-md flex flex-col md:flex-row"
                 >
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-48 md:h-auto md:w-64 shrink-0 overflow-hidden">
                     <Image
                       src={project.cover}
                       alt={project.title}
@@ -69,23 +73,18 @@ export default function UEPage() {
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <div className="p-5">
-                    <h2 className="text-lg font-semibold text-white">
+                  <div className="p-6 flex flex-col justify-center flex-1">
+                    <h2 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
                       {project.title}
                     </h2>
-                    <p className="mt-2 text-sm text-gray-400 line-clamp-3">
-                      {project.description}
+                    <p className="mt-2 text-sm text-gray-300 line-clamp-2">
+                      {project.excerpt}
                     </p>
-                    <a
-                      href={project.videoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                    >
-                      ▶ 观看视频
-                    </a>
+                    <span className="mt-3 text-blue-400 text-sm group-hover:translate-x-1 transition-transform inline-block">
+                      查看详情 →
+                    </span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
