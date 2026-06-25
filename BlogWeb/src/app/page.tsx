@@ -4,7 +4,7 @@ import VideoBackground from "@/components/VideoBackground";
 export default function Landing() {
   return (
     <div className="relative flex-1 flex flex-col items-center justify-center min-h-screen">
-      <VideoBackground src="/videos/rain.mp4" />
+      <VideoBackground src="/videos/1.mp4" />
 
       {/* 遮罩 */}
       <div className="fixed inset-0 bg-black/50 z-[1]" />

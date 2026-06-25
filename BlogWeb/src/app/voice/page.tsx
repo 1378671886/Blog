@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import VideoBackground from "@/components/VideoBackground";
 
 type Status = { type: "idle" } | { type: "loading"; text: string } | { type: "error"; text: string };
 
@@ -54,12 +55,14 @@ export default function Voice() {
   const loading = status.type === "loading";
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center min-h-screen bg-dark">
-      <div className="bg-[#242424] p-8 rounded-2xl w-full max-w-sm space-y-5 border border-gray-700">
+    <div className="relative flex-1 flex flex-col items-center justify-center min-h-screen">
+      <VideoBackground src="/videos/初音.mp4" />
+      <div className="fixed inset-0 bg-black/50 z-[1]" />
+      <div className="relative z-10 bg-white/10 backdrop-blur-md p-8 rounded-2xl w-full max-w-sm space-y-5 border border-white/20 shadow-xl">
         <div className="text-center">
           <span className="text-5xl block mb-3">🎙️</span>
-          <h1 className="text-2xl font-bold text-gray-200">实时语音</h1>
-          <p className="text-gray-500 text-sm mt-1">登录或注册以开始使用</p>
+          <h1 className="text-2xl font-bold text-white">实时语音</h1>
+          <p className="text-white/60 text-sm mt-1">登录或注册以开始使用</p>
         </div>
 
         <input
@@ -108,7 +111,7 @@ export default function Voice() {
         )}
 
         <div className="text-center pt-2">
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-400 transition-colors">
+          <Link href="/" className="text-sm text-white/50 hover:text-white transition-colors">
             ← 返回首页
           </Link>
         </div>
