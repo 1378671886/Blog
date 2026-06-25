@@ -77,10 +77,19 @@ export function usePionSFU(options: UsePionSFUOptions) {
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       pc.ontrack = (event) => {
+        console.log("[SFU] ontrack fired, streams:", event.streams, "track:", event.track);
         const remoteStream = event.streams[0];
-        if (!remoteStream) return;
+        if (!remoteStream) {
+          console.log("[SFU] no remote stream — streams array is empty");
+          return;
+        }
+        console.log("[SFU] remoteStream.id:", remoteStream.id);
         const remoteUserId = parseInt(remoteStream.id);
-        if (isNaN(remoteUserId)) return;
+        console.log("[SFU] parsed userId:", remoteUserId);
+        if (isNaN(remoteUserId)) {
+          console.log("[SFU] userId is NaN, skipping");
+          return;
+        }
 
         let audio = remoteAudiosRef.current.get(remoteUserId);
         if (!audio) {
@@ -88,9 +97,17 @@ export function usePionSFU(options: UsePionSFUOptions) {
           audio.autoplay = true;
           document.body.appendChild(audio);
           remoteAudiosRef.current.set(remoteUserId, audio);
+          console.log("[SFU] created audio element for user", remoteUserId);
         }
         audio.srcObject = remoteStream;
-        audio.play().catch(() => {});
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log("[SFU] audio playing for user", remoteUserId);
+          }).catch((e) => {
+            console.error("[SFU] audio play failed for user", remoteUserId, e);
+          });
+        }
       };
 
       pc.onicecandidate = (event) => {
@@ -135,7 +152,9 @@ export function usePionSFU(options: UsePionSFUOptions) {
                 sdpMLineIndex: msg.sdpMLineIndex,
               });
             }
-          } catch {}
+          } catch (e) {
+            console.error("[SFU] WS message error:", e);
+          }
         });
       };
 
