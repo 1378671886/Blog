@@ -187,6 +187,10 @@ export function usePionSFU(options: UsePionSFUOptions) {
       streamRef.current?.getAudioTracks().forEach((t) => { t.enabled = false; });
       return;
     }
+    // 用户已交互，恢复被 autoplay 策略阻止的远端音频
+    remoteAudiosRef.current.forEach((audio) => {
+      if (audio.paused) audio.play().catch(() => {});
+    });
     // 开启 mic：如果之前没有获取到媒体（如移动端自动连接时被拒绝），现在获取
     if (!streamRef.current) {
       navigator.mediaDevices.getUserMedia({
@@ -211,8 +215,14 @@ export function usePionSFU(options: UsePionSFUOptions) {
     }
   }, []);
 
+  const resumeRemoteAudios = useCallback(() => {
+    remoteAudiosRef.current.forEach((audio) => {
+      if (audio.paused) audio.play().catch(() => {});
+    });
+  }, []);
+
   return useMemo(
-    () => ({ start, stop, setMicEnabled, removePlayer, recording }),
-    [start, stop, setMicEnabled, removePlayer, recording]
+    () => ({ start, stop, setMicEnabled, removePlayer, resumeRemoteAudios, recording }),
+    [start, stop, setMicEnabled, removePlayer, resumeRemoteAudios, recording]
   );
 }

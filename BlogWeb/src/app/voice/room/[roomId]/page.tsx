@@ -194,6 +194,8 @@ export default function VoiceRoom() {
       setTestMicOn(false);
     } else {
       try {
+        // 用户已交互，恢复被 autoplay 阻止的远端音频
+        pionSFU.resumeRemoteAudios();
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         });
