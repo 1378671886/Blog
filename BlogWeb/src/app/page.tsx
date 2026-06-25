@@ -11,7 +11,7 @@ export default function Landing() {
         playsInline
         className="fixed inset-0 w-full h-full object-cover z-0"
       >
-        <source src="/videos/10 Hours of Rain Sound Relaxation   Ultimate Stress Relief, Deep Sleep, Meditation, Yoga,...-00.14.18.000-00.19.25.000.mp4" type="video/mp4" />
+        <source src="/videos/rain.mp4" type="video/mp4" />
       </video>
 
       {/* 遮罩 */}
