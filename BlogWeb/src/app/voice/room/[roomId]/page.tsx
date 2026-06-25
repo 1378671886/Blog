@@ -27,8 +27,7 @@ export default function VoiceRoom() {
   const [micOn, setMicOn] = useState(false);
   const [testMicOn, setTestMicOn] = useState(false);
   const [voiceMode, setVoiceMode] = useState<"p2p" | "sfu">("p2p");
-  const [showModeMenu, setShowModeMenu] = useState(false);
-  const modeMenuRef = useRef<HTMLDivElement>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const myUserIdRef = useRef<number>(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<{ userId: number; username: string }[]>([]);
@@ -108,6 +107,15 @@ export default function VoiceRoom() {
         }]);
       } else if (msg.type === "peer-joined") {
         // 新用户加入，已在线用户准备接收 offer
+      } else if (msg.type === "room-mode") {
+        const newMode = msg.mode as "p2p" | "sfu";
+        if (newMode === "p2p" || newMode === "sfu") {
+          sfuRef.current.stop();
+          rtc.closeAll();
+          micRef.current.stop();
+          setVoiceMode(newMode);
+          setMicOn(false);
+        }
       } else if (msg.type === "peer-left") {
         const uid = msg.userId as number;
         rtc.closePeerConnection(uid);
@@ -133,6 +141,8 @@ export default function VoiceRoom() {
   webRTCHandlersRef.current = webRTC;
 
   const mic = useAudioCapture({});
+  const micRef = useRef(mic);
+  micRef.current = mic;
 
   // SFU 发送：拼接 userId 头
   const sendBinaryRef = useRef<(data: ArrayBuffer) => void>(() => {});
@@ -289,6 +299,12 @@ export default function VoiceRoom() {
             <span className="text-gray-300 font-semibold text-sm">🎙️ 房间</span>
             <span className="block text-emerald-400 text-xs mt-0.5"># {roomId}</span>
           </div>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center justify-center gap-1.5 text-gray-400 hover:text-gray-200 hover:bg-[#333] border border-gray-700 rounded-lg px-3 py-1.5 text-xs transition-colors w-full"
+          >
+            ⚙️ 房间设置
+          </button>
         </div>
 
         <div className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
@@ -311,53 +327,8 @@ export default function VoiceRoom() {
             <span className="text-gray-500 text-xs">{statusText}</span>
           </div>
 
-          {/* 语音模式切换 */}
-          <div className="relative" ref={modeMenuRef}>
-            <button
-              onClick={() => setShowModeMenu(!showModeMenu)}
-              onMouseEnter={() => setShowModeMenu(true)}
-              onMouseLeave={() => setShowModeMenu(false)}
-              className="w-full py-2 rounded-lg text-sm font-medium bg-[#2a2a2a] text-gray-400 border border-gray-700 hover:bg-[#333] transition-all"
-            >
-              {voiceMode === "p2p" ? "🔗 P2P 模式" : "📡 SFU 模式"}
-            </button>
-            {showModeMenu && (
-              <div
-                onMouseEnter={() => setShowModeMenu(true)}
-                onMouseLeave={() => setShowModeMenu(false)}
-                className="absolute bottom-full left-0 w-full pb-1 z-10"
-              >
-                <div className="bg-[#333] border border-gray-600 rounded-lg shadow-lg overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setShowModeMenu(false);
-                      if (voiceMode === "sfu") {
-                        if (micOn) { mic.stop(); setMicOn(false); }
-                        sfuAudio.stop();
-                        setVoiceMode("p2p");
-                      }
-                    }}
-                    className={`w-full px-3 py-2 text-xs text-left hover:bg-[#444] flex items-center gap-2 ${voiceMode === "p2p" ? "text-emerald-400" : "text-gray-400"}`}
-                  >
-                    <span>{voiceMode === "p2p" ? "●" : "○"}</span>
-                    P2P 直连
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowModeMenu(false);
-                      if (voiceMode === "p2p") {
-                        if (micOn) { webRTC.setMicEnabled(false); setMicOn(false); }
-                        setVoiceMode("sfu");
-                      }
-                    }}
-                    className={`w-full px-3 py-2 text-xs text-left hover:bg-[#444] flex items-center gap-2 ${voiceMode === "sfu" ? "text-emerald-400" : "text-gray-400"}`}
-                  >
-                    <span>{voiceMode === "sfu" ? "●" : "○"}</span>
-                    SFU 中转
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="w-full py-2 rounded-lg text-sm font-medium bg-[#2a2a2a] text-gray-500 border border-gray-700 text-center">
+            {voiceMode === "p2p" ? "🔗 P2P 模式" : "📡 SFU 模式"}
           </div>
 
           <button
@@ -449,6 +420,52 @@ export default function VoiceRoom() {
           </div>
         </div>
       </main>
+
+      {/* 房间设置弹窗 */}
+      {showSettings && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            className="bg-[#1e1e1e] border border-gray-700 rounded-2xl shadow-2xl p-6 w-80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-gray-200 font-semibold text-lg mb-4">房间设置</h3>
+            <p className="text-gray-500 text-xs mb-3">连接模式（切换后同步给房间内所有人）</p>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  ws.sendText?.(JSON.stringify({ type: "room-mode", mode: "p2p" }));
+                  setShowSettings(false);
+                }}
+                className={`w-full px-4 py-3 rounded-lg text-sm text-left border transition-all ${
+                  voiceMode === "p2p"
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                    : "bg-[#2a2a2a] border-gray-700 text-gray-400 hover:bg-[#333]"
+                }`}
+              >
+                <div className="font-medium">P2P 直连</div>
+                <div className="text-[10px] text-gray-600 mt-0.5">点对点加密传输，适合 2-3 人</div>
+              </button>
+              <button
+                onClick={() => {
+                  ws.sendText?.(JSON.stringify({ type: "room-mode", mode: "sfu" }));
+                  setShowSettings(false);
+                }}
+                className={`w-full px-4 py-3 rounded-lg text-sm text-left border transition-all ${
+                  voiceMode === "sfu"
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                    : "bg-[#2a2a2a] border-gray-700 text-gray-400 hover:bg-[#333]"
+                }`}
+              >
+                <div className="font-medium">SFU 中转</div>
+                <div className="text-[10px] text-gray-600 mt-0.5">服务器中转音频，适合多人</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,6 +21,8 @@ struct VoiceClient {
 inline std::map<std::string, std::vector<VoiceClient>> g_rooms;
 // pending connections (before WS handshake completes)
 inline std::map<struct mg_connection*, VoiceClient> g_pending;
+// roomId → voice mode ("p2p" | "sfu")
+inline std::map<std::string, std::string> g_room_modes;
 
 static VoiceClient* find_client_in_room(const std::string& roomId, int userId) {
     auto it = g_rooms.find(roomId);
@@ -144,6 +146,12 @@ static void voice_handler(struct mg_connection *c, int ev, void *ev_data) {
                 vc.username.c_str(), vc.roomId.c_str(), g_rooms[vc.roomId].size());
             send_user_list(vc.roomId);
             broadcast_peer_event(vc.roomId, "peer-joined", vc.userId, vc.username, c);
+            // 发送当前房间模式
+            auto modeIt = g_room_modes.find(vc.roomId);
+            std::string curMode = modeIt != g_room_modes.end() ? modeIt->second : "p2p";
+            json modeMsg = {{"type", "room-mode"}, {"mode", curMode}};
+            std::string modeText = modeMsg.dump();
+            mg_ws_send(c, modeText.c_str(), modeText.size(), WEBSOCKET_OP_TEXT);
             g_pending.erase(it);
         }
     }
@@ -160,6 +168,22 @@ static void voice_handler(struct mg_connection *c, int ev, void *ev_data) {
                         for (auto &vc : clients) {
                             if (vc.conn == c) {
                                 broadcast_chat(rid, text, c);
+                                return;
+                            }
+                        }
+                    }
+                } else if (msg.value("type", "") == "room-mode") {
+                    std::string mode = msg.value("mode", "p2p");
+                    for (auto &[rid, clients] : g_rooms) {
+                        for (auto &vc : clients) {
+                            if (vc.conn == c) {
+                                g_room_modes[rid] = mode;
+                                // 广播给房间内所有人（包括发送者）
+                                json modeBroadcast = {{"type", "room-mode"}, {"mode", mode}};
+                                std::string mb = modeBroadcast.dump();
+                                for (auto &cc : clients) {
+                                    mg_ws_send(cc.conn, mb.c_str(), mb.size(), WEBSOCKET_OP_TEXT);
+                                }
                                 return;
                             }
                         }

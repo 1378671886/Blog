@@ -9,7 +9,14 @@
       "Bash(nohup ./blogserver.exe)",
       "Bash(netstat -ano)",
       "Bash(tasklist)",
-      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\" http://localhost:3000/voice)"
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\" http://localhost:3000/voice)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git -C \"D:/VSCodeProgram/Blog\" status)",
+      "Bash(git -C \"D:/VSCodeProgram/Blog\" add BlogServer/source/voice_ws.h BlogWeb/src/hooks/useSFUAudio.ts \"BlogWeb/src/app/voice/room/[roomId]/page.tsx\")",
+      "Bash(git -C D:/VSCodeProgram/Blog commit -m ' *)",
+      "Bash(git *)"
     ]
   }
 }
