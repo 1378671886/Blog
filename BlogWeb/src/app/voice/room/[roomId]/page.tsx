@@ -37,7 +37,6 @@ export default function VoiceRoom() {
   const remoteAudioRef = useRef<Map<number, HTMLAudioElement>>(new Map());
   const sendTextRef = useRef<(text: string) => void>(() => {});
   const webRTCHandlersRef = useRef<ReturnType<typeof useWebRTC>>(null!);
-  const sfuConnectingRef = useRef(false);
 
   useEffect(() => {
     const t = sessionStorage.getItem("token");
@@ -112,7 +111,6 @@ export default function VoiceRoom() {
         const newMode = msg.mode as "p2p" | "sfu";
         if (newMode === "p2p" || newMode === "sfu") {
           sfuRef.current.stop();
-          sfuConnectingRef.current = false;
           rtc.closeAll();
           micRef.current.stop();
           setVoiceMode(newMode);
@@ -246,26 +244,13 @@ export default function VoiceRoom() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sfuStartingRef = useRef(false);
-
   // SFU 模式：进入房间自动连接（不依赖开麦），确保所有人能接收音频
   useEffect(() => {
     if (voiceMode !== "sfu") return;
-    // 断线后重置标记，允许重连（但 start() 进行中不重置，防止双重启动）
-    if (!pionSFU.recording && sfuConnectingRef.current && !sfuStartingRef.current) {
-      sfuConnectingRef.current = false;
-    }
-    if (sfuConnectingRef.current || sfuStartingRef.current) return;
+    if (pionSFU.recording) return;
     const myId = myUserIdRef.current;
     if (!myId) return;
-    sfuConnectingRef.current = true;
-    sfuStartingRef.current = true;
-    pionSFU.start().finally(() => {
-      sfuStartingRef.current = false;
-    }).then(() => {
-      // 连接建立后默认静音，用户点开麦才启用 track
-      pionSFU.setMicEnabled(false);
-    });
+    pionSFU.start();
   }, [voiceMode, users, pionSFU.recording]);
 
   const sendMessage = () => {

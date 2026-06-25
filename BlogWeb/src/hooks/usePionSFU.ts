@@ -36,13 +36,19 @@ export function usePionSFU(options: UsePionSFUOptions) {
   const streamRef = useRef<MediaStream | null>(null);
   const remoteAudiosRef = useRef<Map<number, HTMLAudioElement>>(new Map());
   const [recording, setRecording] = useState(false);
+  const manualStopRef = useRef(false);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const stop = useCallback(() => {
-    console.log("[SFU] stop() called");
+  const cleanup = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
     pcRef.current?.close();
     pcRef.current = null;
     if (wsRef.current) {
       wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
       wsRef.current.close();
       wsRef.current = null;
     }
@@ -53,15 +59,24 @@ export function usePionSFU(options: UsePionSFUOptions) {
       a.remove();
     });
     remoteAudiosRef.current.clear();
-    setRecording(false);
   }, []);
 
+  const stop = useCallback(() => {
+    if (!pcRef.current && !wsRef.current) return;
+    console.log("[SFU] stop() called");
+    manualStopRef.current = true;
+    cleanup();
+    setRecording(false);
+  }, [cleanup]);
+
   const start = useCallback(async () => {
+    if (pcRef.current || wsRef.current) return;
+
     try {
       const userId = userIdRef.current;
       if (!userId) return;
 
-      stop();
+      manualStopRef.current = false;
 
       const sfuWsUrl = isLocal
         ? `ws://localhost:8080/sfu-ws?room=${roomId}&user=${userId}`
@@ -70,7 +85,6 @@ export function usePionSFU(options: UsePionSFUOptions) {
       const pc = new RTCPeerConnection(rtcConfig);
       pcRef.current = pc;
 
-      // 重新协商：后续 addTrack（如 setMicEnabled 补获媒体）自动发 offer
       pc.onnegotiationneeded = async () => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
         if (pc.signalingState !== "stable") return;
@@ -81,7 +95,6 @@ export function usePionSFU(options: UsePionSFUOptions) {
         } catch {}
       };
 
-      // 尝试获取本地媒体，失败则不发送（仅接收模式，如移动端缺少用户手势）
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -94,17 +107,10 @@ export function usePionSFU(options: UsePionSFUOptions) {
 
       pc.ontrack = (event) => {
         const remoteStream = event.streams[0];
-        if (!remoteStream) {
-          console.log("[SFU] no remote stream — streams array is empty");
-          return;
-        }
+        if (!remoteStream) return;
         const remoteUserId = parseInt(remoteStream.id);
-        if (isNaN(remoteUserId)) {
-          console.log("[SFU] userId is NaN, skipping:", remoteStream.id);
-          return;
-        }
+        if (isNaN(remoteUserId)) return;
 
-        // 用 DOM 属性查找已有 Audio 元素，防止 map 被 stop() 清空后重复创建
         const userLabel = "sfu-audio-user-" + remoteUserId;
         let audio: HTMLAudioElement | null = document.querySelector(
           'audio[data-sfu-user="' + userLabel + '"]'
@@ -114,17 +120,10 @@ export function usePionSFU(options: UsePionSFUOptions) {
           audio.autoplay = true;
           audio.dataset.sfuUser = userLabel;
           document.body.appendChild(audio);
-          console.log("[SFU] created audio element for user", remoteUserId);
-        } else {
-          console.log("[SFU] reusing audio element for user", remoteUserId);
         }
         remoteAudiosRef.current.set(remoteUserId, audio);
         audio.srcObject = remoteStream;
-        audio.play().then(() => {
-          console.log("[SFU] audio playing for user", remoteUserId);
-        }).catch((e) => {
-          console.error("[SFU] audio play failed for user", remoteUserId, e);
-        });
+        audio.play().catch(() => {});
       };
 
       pc.onicecandidate = (event) => {
@@ -141,9 +140,12 @@ export function usePionSFU(options: UsePionSFUOptions) {
 
       pc.oniceconnectionstatechange = () => {
         console.log("[SFU] ICE state:", pc.iceConnectionState);
-        if (pc.iceConnectionState === "failed") {
+        if (pc.iceConnectionState === "failed" && !manualStopRef.current) {
           console.log("[SFU] ICE failed, reconnecting...");
-          stop();
+          cleanup();
+          reconnectTimerRef.current = setTimeout(() => {
+            if (!manualStopRef.current) start();
+          }, 1000);
         }
       };
 
@@ -183,25 +185,23 @@ export function usePionSFU(options: UsePionSFUOptions) {
         });
       };
 
-      ws.onerror = () => stop();
-      ws.onclose = () => stop();
+      ws.onerror = () => { stop(); };
+      ws.onclose = () => { stop(); };
 
       setRecording(true);
     } catch {
       stop();
     }
-  }, [userIdRef, roomId, isLocal, stop]);
+  }, [userIdRef, roomId, isLocal, stop, cleanup]);
 
   const setMicEnabled = useCallback((enabled: boolean) => {
     if (!enabled) {
       streamRef.current?.getAudioTracks().forEach((t) => { t.enabled = false; });
       return;
     }
-    // 用户已交互，恢复被 autoplay 策略阻止的远端音频
     remoteAudiosRef.current.forEach((audio) => {
       if (audio.paused) audio.play().catch(() => {});
     });
-    // 开启 mic：如果之前没有获取到媒体（如移动端自动连接时被拒绝），现在获取
     if (!streamRef.current) {
       navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
