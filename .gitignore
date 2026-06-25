@@ -4,4 +4,3 @@ build/
 *.exe
 .env.local
 pion-rtc-sfu/
-BlogWeb/public/videos/
