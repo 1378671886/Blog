@@ -39,6 +39,7 @@ export function usePionSFU(options: UsePionSFUOptions) {
   const manualStopRef = useRef(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micEnabledRef = useRef(false);
+  const iceRestartRef = useRef(false);
 
   const cleanup = useCallback(() => {
     if (reconnectTimerRef.current) {
@@ -144,12 +145,30 @@ export function usePionSFU(options: UsePionSFUOptions) {
 
       pc.oniceconnectionstatechange = () => {
         console.log("[SFU] ICE state:", pc.iceConnectionState);
+        if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+          iceRestartRef.current = false;
+        }
         if (pc.iceConnectionState === "failed" && !manualStopRef.current) {
-          console.log("[SFU] ICE failed, reconnecting...");
-          cleanup();
-          reconnectTimerRef.current = setTimeout(() => {
-            if (!manualStopRef.current) start();
-          }, 1000);
+          if (!iceRestartRef.current) {
+            console.log("[SFU] ICE failed, trying ICE restart...");
+            iceRestartRef.current = true;
+            try {
+              pc.restartIce();
+            } catch {
+              console.log("[SFU] ICE restart not supported, full reconnect...");
+              cleanup();
+              reconnectTimerRef.current = setTimeout(() => {
+                if (!manualStopRef.current) start();
+              }, 300);
+            }
+          } else {
+            console.log("[SFU] ICE restart failed, full reconnect...");
+            iceRestartRef.current = false;
+            cleanup();
+            reconnectTimerRef.current = setTimeout(() => {
+              if (!manualStopRef.current) start();
+            }, 300);
+          }
         }
       };
 
