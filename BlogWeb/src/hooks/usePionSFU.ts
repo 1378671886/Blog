@@ -40,11 +40,16 @@ export function usePionSFU(options: UsePionSFUOptions) {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micEnabledRef = useRef(false);
   const iceRestartRef = useRef(false);
+  const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cleanup = useCallback(() => {
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
+    }
+    if (disconnectTimerRef.current) {
+      clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
     }
     pcRef.current?.close();
     pcRef.current = null;
@@ -145,16 +150,57 @@ export function usePionSFU(options: UsePionSFUOptions) {
 
       pc.oniceconnectionstatechange = () => {
         console.log("[SFU] ICE state:", pc.iceConnectionState);
-        if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+        const state = pc.iceConnectionState;
+
+        if (state === "connected" || state === "completed") {
           iceRestartRef.current = false;
+          if (disconnectTimerRef.current) {
+            clearTimeout(disconnectTimerRef.current);
+            disconnectTimerRef.current = null;
+          }
+          return;
         }
-        if (pc.iceConnectionState === "failed" && !manualStopRef.current) {
+
+        if (manualStopRef.current) return;
+
+        if (state === "disconnected") {
+          if (!disconnectTimerRef.current) {
+            console.log("[SFU] ICE disconnected, waiting 5s for recovery...");
+            disconnectTimerRef.current = setTimeout(() => {
+              disconnectTimerRef.current = null;
+              if (!pcRef.current || pcRef.current.iceConnectionState !== "disconnected") return;
+              if (manualStopRef.current) return;
+              if (!iceRestartRef.current) {
+                console.log("[SFU] ICE still disconnected, trying ICE restart...");
+                iceRestartRef.current = true;
+                try { pcRef.current.restartIce(); } catch {
+                  cleanup();
+                  reconnectTimerRef.current = setTimeout(() => {
+                    if (!manualStopRef.current) start();
+                  }, 300);
+                }
+              } else {
+                console.log("[SFU] ICE restart didn't help, full reconnect...");
+                iceRestartRef.current = false;
+                cleanup();
+                reconnectTimerRef.current = setTimeout(() => {
+                  if (!manualStopRef.current) start();
+                }, 300);
+              }
+            }, 5000);
+          }
+          return;
+        }
+
+        if (state === "failed") {
+          if (disconnectTimerRef.current) {
+            clearTimeout(disconnectTimerRef.current);
+            disconnectTimerRef.current = null;
+          }
           if (!iceRestartRef.current) {
             console.log("[SFU] ICE failed, trying ICE restart...");
             iceRestartRef.current = true;
-            try {
-              pc.restartIce();
-            } catch {
+            try { pc.restartIce(); } catch {
               console.log("[SFU] ICE restart not supported, full reconnect...");
               cleanup();
               reconnectTimerRef.current = setTimeout(() => {
