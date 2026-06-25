@@ -50,15 +50,6 @@ services:
     depends_on:
       - blogserver
 
-  sfu:
-    build:
-      context: ../pion-rtc-sfu
-      dockerfile: Dockerfile
-    container_name: blog-sfu
-    restart: always
-    expose:
-      - "8080"
-
   nginx:
     image: nginx:alpine
     container_name: blog-nginx
@@ -72,7 +63,13 @@ services:
     depends_on:
       - blogserver
       - blogweb
-      - sfu
+    networks:
+      - default
+      - shared
+
+networks:
+  shared:
+    external: true
 
 volumes:
   mysql-data:
