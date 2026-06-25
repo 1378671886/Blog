@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAudioCapture } from "@/hooks/useAudioCapture";
-import { useSFUAudio } from "@/hooks/useSFUAudio";
+import { usePionSFU } from "@/hooks/usePionSFU";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useWebSocket } from "@/hooks/useWebSocket";
 
@@ -131,11 +131,7 @@ export default function VoiceRoom() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
-  const handleBinary = useCallback((data: ArrayBuffer) => {
-    sfuRef.current.handleBinary(data);
-  }, []);
-
-  const ws = useWebSocket(wsUrl, { token, onText: handleText, onBinary: handleBinary, enabled: !!token });
+  const ws = useWebSocket(wsUrl, { token, onText: handleText, enabled: !!token });
 
   sendTextRef.current = ws.sendText ?? (() => {});
   webRTCHandlersRef.current = webRTC;
@@ -144,23 +140,16 @@ export default function VoiceRoom() {
   const micRef = useRef(mic);
   micRef.current = mic;
 
-  // SFU 发送：裸音频数据（userId 由后端广播时追加）
-  const sendBinaryRef = useRef<(data: ArrayBuffer) => void>(() => {});
-  const sendSfuBinary = useCallback((data: ArrayBuffer) => {
-    if (!myUserIdRef.current) return;
-    sendBinaryRef.current(data);
-  }, []);
-  const sfuAudio = useSFUAudio({ sendBinary: sendSfuBinary });
-  const sfuRef = useRef(sfuAudio);
-  sfuRef.current = sfuAudio;
-  sendBinaryRef.current = ws.send ?? (() => {});
+  const pionSFU = usePionSFU({ userIdRef: myUserIdRef, roomId, isLocal });
+  const sfuRef = useRef(pionSFU);
+  sfuRef.current = pionSFU;
 
   const toggleMic = async () => {
     if (micOn) {
       if (voiceMode === "p2p") {
         webRTC.setMicEnabled(false);
       } else {
-        sfuAudio.setMicEnabled(false);
+        pionSFU.setMicEnabled(false);
       }
       setMicOn(false);
     } else {
@@ -181,7 +170,7 @@ export default function VoiceRoom() {
         }
       } else {
         // SFU 模式
-        await sfuAudio.start();
+        await pionSFU.start();
       }
       setMicOn(true);
     }
