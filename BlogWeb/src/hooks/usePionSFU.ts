@@ -38,6 +38,7 @@ export function usePionSFU(options: UsePionSFUOptions) {
   const [recording, setRecording] = useState(false);
   const manualStopRef = useRef(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const micEnabledRef = useRef(false);
 
   const cleanup = useCallback(() => {
     if (reconnectTimerRef.current) {
@@ -101,6 +102,9 @@ export function usePionSFU(options: UsePionSFUOptions) {
         });
         streamRef.current = stream;
         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+        if (!micEnabledRef.current) {
+          stream.getTracks().forEach((t) => { t.enabled = false; });
+        }
       } catch {
         pc.addTransceiver("audio", { direction: "recvonly" });
       }
@@ -195,6 +199,7 @@ export function usePionSFU(options: UsePionSFUOptions) {
   }, [userIdRef, roomId, isLocal, stop, cleanup]);
 
   const setMicEnabled = useCallback((enabled: boolean) => {
+    micEnabledRef.current = enabled;
     if (!enabled) {
       streamRef.current?.getAudioTracks().forEach((t) => { t.enabled = false; });
       return;

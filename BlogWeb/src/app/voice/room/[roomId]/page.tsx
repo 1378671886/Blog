@@ -174,6 +174,7 @@ export default function VoiceRoom() {
           pionSFU.setMicEnabled(true);
         } else {
           await pionSFU.start();
+          pionSFU.setMicEnabled(true);
         }
       }
       setMicOn(true);
