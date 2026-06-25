@@ -172,42 +172,41 @@ export default function BlogPage() {
 
         {/* 博客文章区域 — 视频直接透出 */}
         <div id="posts" className="py-16">
-          <div className="max-w-4xl mx-auto px-6">
-            <h2 className="text-3xl font-bold mb-2 text-white">欢迎来访 👋</h2>
-            <p className="text-gray-400 mb-10 text-lg">记录想法，分享学习。</p>
-
-            {/* 栏目导航 — 小方块 2列 */}
-            <div className="grid grid-cols-2 gap-4 max-w-xs mb-14">
+          <div className="max-w-4xl mx-auto px-6 flex gap-8">
+            {/* 左侧：小方形导航 */}
+            <div className="shrink-0 grid grid-cols-2 gap-3 w-44 h-fit">
               <Link
                 href="/blog/ue"
-                className="nav-card group aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-blue-400/50 transition-all duration-500 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:-translate-y-0.5 flex flex-col items-center justify-center text-center p-4 relative"
+                className="nav-card group aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-blue-400/50 transition-all duration-500 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:-translate-y-0.5 flex flex-col items-center justify-center text-center p-2 relative"
               >
                 <div className="nav-card-glow" />
-                <span className="relative z-10 text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">🎮</span>
-                <span className="relative z-10 text-sm font-semibold text-white group-hover:text-blue-400 transition-colors duration-300">UE项目</span>
-                <span className="relative z-10 text-xs text-gray-400 mt-0.5">项目展示</span>
+                <span className="relative z-10 text-2xl group-hover:scale-110 transition-transform duration-300">🎮</span>
+                <span className="relative z-10 text-xs font-semibold text-white mt-1 group-hover:text-blue-400 transition-colors duration-300">UE项目</span>
               </Link>
               <Link
                 href="/blog/about"
-                className="nav-card group aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-emerald-400/50 transition-all duration-500 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(52,211,153,0.15)] hover:-translate-y-0.5 flex flex-col items-center justify-center text-center p-4 relative"
+                className="nav-card group aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-emerald-400/50 transition-all duration-500 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(52,211,153,0.15)] hover:-translate-y-0.5 flex flex-col items-center justify-center text-center p-2 relative"
               >
-                <span className="relative z-10 text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">👤</span>
-                <span className="relative z-10 text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors duration-300">关于我</span>
-                <span className="relative z-10 text-xs text-gray-400 mt-0.5">了解更多</span>
+                <span className="relative z-10 text-2xl group-hover:scale-110 transition-transform duration-300">👤</span>
+                <span className="relative z-10 text-xs font-semibold text-white mt-1 group-hover:text-emerald-400 transition-colors duration-300">关于我</span>
               </Link>
               <Link
                 href="/voice"
-                className="nav-card group aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-purple-400/50 transition-all duration-500 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:-translate-y-0.5 flex flex-col items-center justify-center text-center p-4 relative"
+                className="nav-card group aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-purple-400/50 transition-all duration-500 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:-translate-y-0.5 flex flex-col items-center justify-center text-center p-2 relative col-span-2"
               >
-                <span className="relative z-10 text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">🎙️</span>
-                <span className="relative z-10 text-sm font-semibold text-white group-hover:text-purple-400 transition-colors duration-300">实时语音</span>
-                <span className="relative z-10 text-xs text-gray-400 mt-0.5">语音交互</span>
+                <span className="relative z-10 text-2xl group-hover:scale-110 transition-transform duration-300">🎙️</span>
+                <span className="relative z-10 text-xs font-semibold text-white mt-1 group-hover:text-purple-400 transition-colors duration-300">实时语音</span>
               </Link>
             </div>
 
-            <h3 className="text-xl font-semibold text-white mb-6">📝 最新文章</h3>
+            {/* 右侧：内容区 */}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-3xl font-bold mb-2 text-white">欢迎来访 👋</h2>
+              <p className="text-gray-400 mb-10 text-lg">记录想法，分享学习。</p>
 
-            <div className="grid gap-8 md:grid-cols-2">
+              <h3 className="text-xl font-semibold text-white mb-6">📝 最新文章</h3>
+
+              <div className="grid gap-8 md:grid-cols-2">
                   {posts.map((post) => (
                     <Link
                       key={post.slug}
