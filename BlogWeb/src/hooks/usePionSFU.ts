@@ -92,37 +92,39 @@ export function usePionSFU(options: UsePionSFUOptions) {
       }
 
       pc.ontrack = (event) => {
-        console.log("[SFU] ontrack fired, streams:", event.streams, "track:", event.track);
         const remoteStream = event.streams[0];
         if (!remoteStream) {
           console.log("[SFU] no remote stream — streams array is empty");
           return;
         }
-        console.log("[SFU] remoteStream.id:", remoteStream.id);
         const remoteUserId = parseInt(remoteStream.id);
-        console.log("[SFU] parsed userId:", remoteUserId);
         if (isNaN(remoteUserId)) {
-          console.log("[SFU] userId is NaN, skipping");
+          console.log("[SFU] userId is NaN, skipping:", remoteStream.id);
           return;
         }
 
         let audio = remoteAudiosRef.current.get(remoteUserId);
+        // 如果旧元素已不在 DOM 中（可能被浏览器清理），重新创建
+        if (audio && !document.body.contains(audio)) {
+          console.log("[SFU] audio element lost from DOM for user", remoteUserId);
+          remoteAudiosRef.current.delete(remoteUserId);
+          audio = undefined;
+        }
         if (!audio) {
           audio = new Audio();
           audio.autoplay = true;
           document.body.appendChild(audio);
           remoteAudiosRef.current.set(remoteUserId, audio);
           console.log("[SFU] created audio element for user", remoteUserId);
+        } else {
+          console.log("[SFU] reusing audio element for user", remoteUserId);
         }
         audio.srcObject = remoteStream;
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log("[SFU] audio playing for user", remoteUserId);
-          }).catch((e) => {
-            console.error("[SFU] audio play failed for user", remoteUserId, e);
-          });
-        }
+        audio.play().then(() => {
+          console.log("[SFU] audio playing for user", remoteUserId);
+        }).catch((e) => {
+          console.error("[SFU] audio play failed for user", remoteUserId, e);
+        });
       };
 
       pc.onicecandidate = (event) => {
