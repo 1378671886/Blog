@@ -144,17 +144,11 @@ export default function VoiceRoom() {
   const micRef = useRef(mic);
   micRef.current = mic;
 
-  // SFU 发送：拼接 userId 头
+  // SFU 发送：裸音频数据（userId 由后端广播时追加）
   const sendBinaryRef = useRef<(data: ArrayBuffer) => void>(() => {});
   const sendSfuBinary = useCallback((data: ArrayBuffer) => {
-    const uid = myUserIdRef.current;
-    if (!uid) return;
-    const header = new ArrayBuffer(4);
-    new DataView(header).setUint32(0, uid, true);
-    const combined = new Uint8Array(4 + data.byteLength);
-    combined.set(new Uint8Array(header), 0);
-    combined.set(new Uint8Array(data), 4);
-    sendBinaryRef.current(combined.buffer);
+    if (!myUserIdRef.current) return;
+    sendBinaryRef.current(data);
   }, []);
   const sfuAudio = useSFUAudio({ sendBinary: sendSfuBinary });
   const sfuRef = useRef(sfuAudio);
