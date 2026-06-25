@@ -27,9 +27,6 @@ export default function UEPage() {
               <Link href="/blog" className="hover:text-white transition-colors">
                 博客
               </Link>
-              <Link href="/blog/ue" className="text-white transition-colors">
-                专栏
-              </Link>
               <Link href="#" className="hover:text-white transition-colors">
                 语音
               </Link>
