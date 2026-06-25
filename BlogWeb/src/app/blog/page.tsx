@@ -172,9 +172,9 @@ export default function BlogPage() {
 
         {/* 博客文章区域 — 视频直接透出 */}
         <div id="posts" className="py-16">
-          <div className="max-w-4xl mx-auto px-6 flex gap-8">
-            {/* 左侧：小方形导航 */}
-            <div className="shrink-0 grid grid-cols-2 gap-3 w-44 h-fit">
+          <div className="max-w-4xl mx-auto px-6 relative">
+            {/* 左侧：小方形导航 — 绝对定位到容器左边 */}
+            <div className="hidden lg:grid absolute right-full mr-6 top-0 grid-cols-2 gap-3 w-44">
               <Link
                 href="/blog/ue"
                 className="nav-card group aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-blue-400/50 transition-all duration-500 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:-translate-y-0.5 flex flex-col items-center justify-center text-center p-2 relative"
@@ -199,14 +199,19 @@ export default function BlogPage() {
               </Link>
             </div>
 
-            {/* 右侧：内容区 */}
-            <div className="flex-1 min-w-0">
-              <h2 className="text-3xl font-bold mb-2 text-white">欢迎来访 👋</h2>
-              <p className="text-gray-400 mb-10 text-lg">记录想法，分享学习。</p>
+            {/* 小屏幕导航 */}
+            <div className="flex gap-3 mb-6 lg:hidden">
+              <Link href="/blog/ue" className="rounded-xl px-3 py-2 border border-white/10 bg-white/5 text-white text-xs">🎮 UE项目</Link>
+              <Link href="/blog/about" className="rounded-xl px-3 py-2 border border-white/10 bg-white/5 text-white text-xs">👤 关于</Link>
+              <Link href="/voice" className="rounded-xl px-3 py-2 border border-white/10 bg-white/5 text-white text-xs">🎙️ 语音</Link>
+            </div>
 
-              <h3 className="text-xl font-semibold text-white mb-6">📝 最新文章</h3>
+            <h2 className="text-3xl font-bold mb-2 text-white">欢迎来访 👋</h2>
+            <p className="text-gray-400 mb-10 text-lg">记录想法，分享学习。</p>
 
-              <div className="grid gap-8 md:grid-cols-2">
+            <h3 className="text-xl font-semibold text-white mb-6">📝 最新文章</h3>
+
+            <div className="grid gap-8 md:grid-cols-2">
                   {posts.map((post) => (
                     <Link
                       key={post.slug}
@@ -248,7 +253,6 @@ export default function BlogPage() {
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
