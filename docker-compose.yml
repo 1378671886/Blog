@@ -37,11 +37,11 @@ services:
       mysql:
         condition: service_healthy
 
-  blogweb:
+  blog:
     build:
       context: ./BlogWeb
       dockerfile: Dockerfile
-    container_name: blog-web
+    container_name: blog
     restart: always
     expose:
       - "3000"
@@ -62,7 +62,7 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl
     depends_on:
       - blogserver
-      - blogweb
+      - blog
 
 volumes:
   mysql-data:
