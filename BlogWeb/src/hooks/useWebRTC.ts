@@ -68,10 +68,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
       }
     };
     pc.oniceconnectionstatechange = () => {
-      if (
-        pc.iceConnectionState === "failed" ||
-        pc.iceConnectionState === "disconnected"
-      ) {
+      if (pc.iceConnectionState === "failed") {
         closePeerConnection(userId);
         onPeerDisconnected?.(userId);
       }

@@ -137,6 +137,14 @@ export function usePionSFU(options: UsePionSFUOptions) {
         );
       };
 
+      pc.oniceconnectionstatechange = () => {
+        console.log("[SFU] ICE state:", pc.iceConnectionState);
+        if (pc.iceConnectionState === "failed") {
+          console.log("[SFU] ICE failed, reconnecting...");
+          stop();
+        }
+      };
+
       const ws = new WebSocket(sfuWsUrl);
       wsRef.current = ws;
 
