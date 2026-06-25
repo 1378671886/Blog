@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getPosts } from "@/lib/posts";
+import VideoBackground from "@/components/VideoBackground";
 
 function FadeIn({
   children,
@@ -87,23 +88,12 @@ function AnimatedHeading({
   );
 }
 
-const VIDEO_URL = "/videos/@roro046.mp4";
-
 export default function BlogPage() {
   const posts = getPosts();
 
   return (
     <div className="relative">
-      {/* 全页固定视频背景 */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="fixed inset-0 w-full h-full object-cover z-0"
-      >
-        <source src={VIDEO_URL} type="video/mp4" />
-      </video>
+      <VideoBackground src="/videos/@roro046.mp4" />
 
       {/* 前景内容 */}
       <div className="relative z-10">

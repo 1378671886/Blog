@@ -1,18 +1,10 @@
 import Link from "next/link";
+import VideoBackground from "@/components/VideoBackground";
 
 export default function Landing() {
   return (
     <div className="relative flex-1 flex flex-col items-center justify-center min-h-screen">
-      {/* 视频背景 */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="fixed inset-0 w-full h-full object-cover z-0"
-      >
-        <source src="/videos/rain.mp4" type="video/mp4" />
-      </video>
+      <VideoBackground src="/videos/rain.mp4" />
 
       {/* 遮罩 */}
       <div className="fixed inset-0 bg-black/50 z-[1]" />

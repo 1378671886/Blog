@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import VideoBackground from "@/components/VideoBackground";
 
 export function generateStaticParams() {
   return getPosts().map((post) => ({ slug: post.slug }));
@@ -23,16 +24,7 @@ export default async function PostPage({
 
   return (
     <div className="relative min-h-screen">
-      {/* 视频背景 */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="fixed inset-0 w-full h-full object-cover z-0"
-      >
-        <source src="/videos/@roro046.mp4" type="video/mp4" />
-      </video>
+      <VideoBackground src="/videos/@roro046.mp4" />
 
       {/* 前景内容 */}
       <div className="relative z-10 max-w-3xl mx-auto px-6 py-16">

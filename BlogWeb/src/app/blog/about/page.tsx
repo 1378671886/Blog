@@ -1,16 +1,9 @@
+import VideoBackground from "@/components/VideoBackground";
+
 export default function About() {
   return (
     <div className="relative min-h-screen">
-      {/* 视频背景 */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="fixed inset-0 w-full h-full object-cover z-0"
-      >
-        <source src="/videos/@roro046.mp4" type="video/mp4" />
-      </video>
+      <VideoBackground src="/videos/@roro046.mp4" />
 
       {/* 前景内容 */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-16">
