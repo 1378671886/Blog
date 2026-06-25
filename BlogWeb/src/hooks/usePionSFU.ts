@@ -69,6 +69,17 @@ export function usePionSFU(options: UsePionSFUOptions) {
       const pc = new RTCPeerConnection(rtcConfig);
       pcRef.current = pc;
 
+      // 重新协商：后续 addTrack（如 setMicEnabled 补获媒体）自动发 offer
+      pc.onnegotiationneeded = async () => {
+        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        if (pc.signalingState !== "stable") return;
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          wsRef.current.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
+        } catch {}
+      };
+
       // 尝试获取本地媒体，失败则不发送（仅接收模式，如移动端缺少用户手势）
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
