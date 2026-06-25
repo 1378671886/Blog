@@ -172,89 +172,102 @@ export default function BlogPage() {
 
         {/* 博客文章区域 — 视频直接透出 */}
         <div id="posts" className="py-16">
-          <div className="max-w-4xl mx-auto px-6">
+          <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-3xl font-bold mb-2 text-white">欢迎来访 👋</h2>
             <p className="text-gray-400 mb-12 text-lg">记录想法，分享学习。</p>
 
-            {/* 栏目导航 */}
-            <div className="grid gap-6 md:grid-cols-3 mb-12">
-              <Link
-                href="/blog/ue"
-                className="group rounded-xl p-6 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
-              >
-                <span className="text-3xl block mb-3">🎮</span>
-                <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
-                  UE项目介绍
-                </h3>
-                <p className="mt-1 text-sm text-gray-400">
-                  UE 游戏开发项目展示与视频演示
-                </p>
-              </Link>
-              <Link
-                href="/blog/about"
-                className="group rounded-xl p-6 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
-              >
-                <span className="text-3xl block mb-3">👤</span>
-                <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
-                  关于我
-                </h3>
-                <p className="mt-1 text-sm text-gray-400">
-                  了解更多关于我和这个博客
-                </p>
-              </Link>
-              <Link
-                href="/voice"
-                className="group rounded-xl p-6 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
-              >
-                <span className="text-3xl block mb-3">🎙️</span>
-                <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
-                  实时语音
-                </h3>
-                <p className="mt-1 text-sm text-gray-400">
-                  探索语音交互功能
-                </p>
-              </Link>
-            </div>
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* 左侧导航栏 */}
+              <aside className="md:w-56 shrink-0">
+                <div className="space-y-3 sticky top-24">
+                  <Link
+                    href="/blog/ue"
+                    className="flex items-center gap-3 rounded-xl p-4 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
+                  >
+                    <span className="text-2xl shrink-0">🎮</span>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">
+                        UE项目介绍
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        项目展示与视频
+                      </p>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/blog/about"
+                    className="flex items-center gap-3 rounded-xl p-4 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
+                  >
+                    <span className="text-2xl shrink-0">👤</span>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">
+                        关于我
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        了解我和这个博客
+                      </p>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/voice"
+                    className="flex items-center gap-3 rounded-xl p-4 border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:bg-white/20"
+                  >
+                    <span className="text-2xl shrink-0">🎙️</span>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">
+                        实时语音
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        探索语音交互
+                      </p>
+                    </div>
+                  </Link>
+                </div>
+              </aside>
 
-            <h3 className="text-xl font-semibold text-white mb-6">📝 最新文章</h3>
+              {/* 右侧文章区 */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-semibold text-white mb-6">📝 最新文章</h3>
 
-            <div className="grid gap-8 md:grid-cols-2">
-              {posts.map((post) => (
-                <Link
-                  key={post.slug}
-                  href={`/blog/posts/${post.slug}`}
-                  className="group block rounded-xl overflow-hidden border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm"
-                >
-                  <div className="relative h-48 overflow-hidden">
-                    <Image
-                      src={post.cover}
-                      alt={post.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                <div className="grid gap-8 md:grid-cols-2">
+                  {posts.map((post) => (
+                    <Link
+                      key={post.slug}
+                      href={`/blog/posts/${post.slug}`}
+                      className="group block rounded-xl overflow-hidden border border-white/10 hover:border-white/30 transition-all bg-white/10 backdrop-blur-sm"
+                    >
+                      <div className="relative h-48 overflow-hidden">
+                        <Image
+                          src={post.cover}
+                          alt={post.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="p-5">
+                        <time className="text-xs text-gray-400">{post.date}</time>
+                        <h2 className="mt-1 text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
+                          {post.title}
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-400 line-clamp-2">
+                          {post.excerpt}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="mt-12 relative h-64 rounded-xl overflow-hidden">
+                  <Image
+                    src="/images/c45595ad653c209be35199a39c77dd59.jpg"
+                    alt="banner"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <p className="text-white text-2xl font-semibold">更多精彩内容，持续更新中</p>
                   </div>
-                  <div className="p-5">
-                    <time className="text-xs text-gray-400">{post.date}</time>
-                    <h2 className="mt-1 text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
-                      {post.title}
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-400 line-clamp-2">
-                      {post.excerpt}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            <div className="mt-12 relative h-64 rounded-xl overflow-hidden">
-              <Image
-                src="/images/c45595ad653c209be35199a39c77dd59.jpg"
-                alt="banner"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <p className="text-white text-2xl font-semibold">更多精彩内容，持续更新中</p>
+                </div>
               </div>
             </div>
           </div>
