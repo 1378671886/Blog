@@ -38,6 +38,7 @@ export function usePionSFU(options: UsePionSFUOptions) {
   const [recording, setRecording] = useState(false);
 
   const stop = useCallback(() => {
+    console.log("[SFU] stop() called");
     pcRef.current?.close();
     pcRef.current = null;
     if (wsRef.current) {
@@ -103,22 +104,21 @@ export function usePionSFU(options: UsePionSFUOptions) {
           return;
         }
 
-        let audio = remoteAudiosRef.current.get(remoteUserId);
-        // 如果旧元素已不在 DOM 中（可能被浏览器清理），重新创建
-        if (audio && !document.body.contains(audio)) {
-          console.log("[SFU] audio element lost from DOM for user", remoteUserId);
-          remoteAudiosRef.current.delete(remoteUserId);
-          audio = undefined;
-        }
+        // 用 DOM 属性查找已有 Audio 元素，防止 map 被 stop() 清空后重复创建
+        const userLabel = "sfu-audio-user-" + remoteUserId;
+        let audio: HTMLAudioElement | null = document.querySelector(
+          'audio[data-sfu-user="' + userLabel + '"]'
+        );
         if (!audio) {
           audio = new Audio();
           audio.autoplay = true;
+          audio.dataset.sfuUser = userLabel;
           document.body.appendChild(audio);
-          remoteAudiosRef.current.set(remoteUserId, audio);
           console.log("[SFU] created audio element for user", remoteUserId);
         } else {
           console.log("[SFU] reusing audio element for user", remoteUserId);
         }
+        remoteAudiosRef.current.set(remoteUserId, audio);
         audio.srcObject = remoteStream;
         audio.play().then(() => {
           console.log("[SFU] audio playing for user", remoteUserId);
@@ -217,12 +217,15 @@ export function usePionSFU(options: UsePionSFUOptions) {
   }, []);
 
   const removePlayer = useCallback((userId: number) => {
-    const audio = remoteAudiosRef.current.get(userId);
+    const userLabel = "sfu-audio-user-" + userId;
+    const audio = document.querySelector(
+      'audio[data-sfu-user="' + userLabel + '"]'
+    ) as HTMLAudioElement | null;
     if (audio) {
       audio.pause();
       audio.remove();
-      remoteAudiosRef.current.delete(userId);
     }
+    remoteAudiosRef.current.delete(userId);
   }, []);
 
   const resumeRemoteAudios = useCallback(() => {
