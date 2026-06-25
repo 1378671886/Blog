@@ -28,15 +28,55 @@ export function useSFUAudio(options: UseSFUAudioOptions) {
       try {
         player.sb.appendBuffer(chunk);
       } catch {
+        // 解析失败（如 SourceBuffer 状态错误），放回并暂停
         player.queue.unshift(chunk);
-        break;
+        return;
       }
     }
-    // 队列过长则丢弃旧数据，防止延迟累积
-    while (player.queue.length > 8) {
+    // 队列过长丢弃旧数据，控制延迟
+    while (player.queue.length > 10) {
       player.queue.shift();
     }
   }, []);
+
+  const createPlayer = useCallback((userId: number): SFUPlayer => {
+    const audio = new Audio();
+    audio.autoplay = true;
+    document.body.appendChild(audio);
+
+    const ms = new MediaSource();
+    audio.src = URL.createObjectURL(ms);
+
+    const mime = MediaSource.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : "audio/webm";
+
+    const player: SFUPlayer = { audio, ms, sb: null, queue: [], ready: false };
+    playersRef.current.set(userId, player);
+
+    const onOpen = () => {
+      ms.removeEventListener("sourceopen", onOpen);
+      if (ms.readyState !== "open") return;
+      try {
+        const sb = ms.addSourceBuffer(mime);
+        sb.mode = "sequence";
+        player.sb = sb;
+        player.ready = true;
+        sb.addEventListener("updateend", () => tryAppend(player));
+        sb.addEventListener("error", () => {
+          player.sb = null;
+          player.ready = false;
+        });
+        tryAppend(player);
+      } catch {
+        // mime 不支持
+      }
+    };
+    ms.addEventListener("sourceopen", onOpen);
+
+    audio.play().catch(() => {});
+    return player;
+  }, [tryAppend]);
 
   const handleBinary = useCallback((data: ArrayBuffer) => {
     if (data.byteLength < 5) return;
@@ -47,37 +87,12 @@ export function useSFUAudio(options: UseSFUAudioOptions) {
 
     let player = playersRef.current.get(userId);
     if (!player) {
-      const audio = new Audio();
-      audio.autoplay = true;
-      const ms = new MediaSource();
-      audio.src = URL.createObjectURL(ms);
-
-      player = { audio, ms, sb: null, queue: [], ready: false };
-      playersRef.current.set(userId, player);
-
-      ms.onsourceopen = () => {
-        // 等待 SourceBuffer 就绪后刷新队列
-        const mime = MediaSource.isTypeSupported("audio/webm;codecs=opus")
-          ? "audio/webm;codecs=opus"
-          : "audio/webm";
-        try {
-          const sb = ms.addSourceBuffer(mime);
-          sb.mode = "sequence";
-          player!.sb = sb;
-          player!.ready = true;
-          // 初始队列里可能有数据，触发一次刷新
-          sb.addEventListener("updateend", () => tryAppend(player!));
-          tryAppend(player!);
-        } catch {
-          // mime 不支持，降级为 srcObject 方式
-        }
-      };
-      audio.play().catch(() => {});
+      player = createPlayer(userId);
     }
 
     player.queue.push(audioData);
     if (player.ready) tryAppend(player);
-  }, [tryAppend]);
+  }, [createPlayer, tryAppend]);
 
   const start = useCallback(async () => {
     try {
