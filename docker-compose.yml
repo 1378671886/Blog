@@ -63,13 +63,6 @@ services:
     depends_on:
       - blogserver
       - blogweb
-    networks:
-      - default
-      - shared
-
-networks:
-  shared:
-    external: true
 
 volumes:
   mysql-data:
