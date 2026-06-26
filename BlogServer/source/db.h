@@ -9,26 +9,51 @@ class Database {
 public:
     Database(const std::string& host, int port,
              const std::string& user, const std::string& password,
-             const std::string& dbname) {
-        conn_ = mysql_init(nullptr);
-        if (!conn_) throw std::runtime_error("mysql_init failed");
-        if (!mysql_real_connect(conn_, host.c_str(), user.c_str(),
-                                password.c_str(), dbname.c_str(),
-                                port, nullptr, 0)) {
-            std::string err = mysql_error(conn_);
-            mysql_close(conn_);
-            throw std::runtime_error("mysql_connect: " + err);
-        }
+             const std::string& dbname)
+        : host_(host), port_(port), user_(user), password_(password), dbname_(dbname) {
+        connect();
     }
 
     ~Database() {
         if (conn_) mysql_close(conn_);
     }
 
+private:
+    std::string host_, user_, password_, dbname_;
+    int port_;
+
+    void connect() {
+        if (conn_) mysql_close(conn_);
+        conn_ = mysql_init(nullptr);
+        if (!conn_) throw std::runtime_error("mysql_init failed");
+        if (!mysql_real_connect(conn_, host_.c_str(), user_.c_str(),
+                                password_.c_str(), dbname_.c_str(),
+                                port_, nullptr, 0)) {
+            std::string err = mysql_error(conn_);
+            mysql_close(conn_);
+            conn_ = nullptr;
+            throw std::runtime_error("mysql_connect: " + err);
+        }
+    }
+
+    bool ensureConnected() {
+        if (!conn_) return false;
+        if (mysql_ping(conn_) == 0) return true;
+        // 连接已断开，尝试重连
+        try {
+            connect();
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+
+public:
     // 注册用户，返回 id，失败返回 -1
     int createUser(const std::string& username,
                    const std::string& passwordHash,
                    const std::string& salt) {
+        if (!ensureConnected()) return -1;
         const char* sql =
             "INSERT INTO users (username, password_hash, salt) VALUES (?, ?, ?)";
         MYSQL_STMT* stmt = mysql_stmt_init(conn_);
@@ -63,6 +88,7 @@ public:
     struct User { int id; std::string passwordHash; std::string salt; };
 
     User findByUsername(const std::string& username) {
+        if (!ensureConnected()) return {-1, "", ""};
         MYSQL_STMT* stmt = mysql_stmt_init(conn_);
         User result{-1, "", ""};
         if (!stmt) return result;
@@ -108,6 +134,7 @@ public:
 
     std::vector<User> findAllByUsername(const std::string& username) {
         std::vector<User> results;
+        if (!ensureConnected()) return results;
         MYSQL_STMT* stmt = mysql_stmt_init(conn_);
         if (!stmt) return results;
 
@@ -152,6 +179,7 @@ public:
     struct Room { int id; std::string roomId; int creatorId; std::string createdAt; };
 
     int createRoom(const std::string& roomId, int creatorId) {
+        if (!ensureConnected()) return -1;
         const char* sql = "INSERT INTO rooms (room_id, creator_id) VALUES (?, ?)";
         MYSQL_STMT* stmt = mysql_stmt_init(conn_);
         if (!stmt) return -1;
@@ -175,6 +203,7 @@ public:
 
     Room findRoom(const std::string& roomId) {
         Room r{-1, "", 0, ""};
+        if (!ensureConnected()) return r;
         MYSQL_STMT* stmt = mysql_stmt_init(conn_);
         if (!stmt) return r;
         const char* sql = "SELECT id, room_id, creator_id, created_at FROM rooms WHERE room_id = ?";
@@ -207,6 +236,7 @@ public:
 
     std::vector<Room> listRooms() {
         std::vector<Room> results;
+        if (!ensureConnected()) return results;
         MYSQL_STMT* stmt = mysql_stmt_init(conn_);
         if (!stmt) return results;
         const char* sql = "SELECT id, room_id, creator_id, created_at FROM rooms ORDER BY created_at DESC";
@@ -230,6 +260,7 @@ public:
     }
 
     bool deleteRoom(const std::string& roomId, int creatorId) {
+        if (!ensureConnected()) return false;
         const char* sql = "DELETE FROM rooms WHERE room_id = ? AND creator_id = ?";
         MYSQL_STMT* stmt = mysql_stmt_init(conn_);
         if (!stmt) return false;
