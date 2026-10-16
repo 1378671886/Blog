@@ -6,3 +6,4 @@ build/
 *.tsbuildinfo
 BlogWeb/next-env.d.ts
 BlogWeb/public/videos/
+.claude/settings.local.json
