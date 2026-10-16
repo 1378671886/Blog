@@ -3,4 +3,6 @@ node_modules/
 build/
 *.exe
 .env.local
+*.tsbuildinfo
+BlogWeb/next-env.d.ts
 BlogWeb/public/videos/
