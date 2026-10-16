@@ -37,6 +37,14 @@ services:
       mysql:
         condition: service_healthy
 
+  sfu:
+    build:
+      context: ./vendor/pion-rtc-sfu
+      dockerfile: Dockerfile
+    container_name: pion-sfu
+    restart: always
+    network_mode: host
+
   blog:
     build:
       context: ./BlogWeb
