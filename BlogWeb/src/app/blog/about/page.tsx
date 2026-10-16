@@ -3,7 +3,7 @@ import VideoBackground from "@/components/VideoBackground";
 export default function About() {
   return (
     <div className="relative min-h-screen">
-      <VideoBackground src="/videos/柠檬_1.mp4" />
+      <VideoBackground src="/images/bg-blog.jpg" />
 
       {/* 前景内容 */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-16">

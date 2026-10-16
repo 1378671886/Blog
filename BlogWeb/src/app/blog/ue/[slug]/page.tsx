@@ -13,7 +13,7 @@ export default function UEProjectPage() {
   if (!project) {
     return (
       <div className="relative min-h-screen">
-        <VideoBackground src="/videos/柠檬_1.mp4" />
+        <VideoBackground src="/images/bg-blog.jpg" />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-white mb-4">项目未找到</h1>
@@ -28,7 +28,7 @@ export default function UEProjectPage() {
 
   return (
     <div className="relative">
-      <VideoBackground src="/videos/柠檬_1.mp4" />
+      <VideoBackground src="/images/bg-blog.jpg" />
 
       <div className="relative z-10">
         {/* 导航栏 */}

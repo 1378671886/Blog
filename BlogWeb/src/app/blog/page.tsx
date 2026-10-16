@@ -94,7 +94,7 @@ export default function BlogPage() {
 
   return (
     <div className="relative">
-      <VideoBackground src="/videos/柠檬_1.mp4" />
+      <VideoBackground src="/images/bg-blog.jpg" />
 
       {/* 前景内容 */}
       <div className="relative z-10">

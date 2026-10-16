@@ -56,7 +56,7 @@ export default function Voice() {
 
   return (
     <div className="relative flex-1 flex flex-col items-center justify-center min-h-screen">
-      <VideoBackground src="/videos/初音.mp4" />
+      <VideoBackground src="/images/bg-voice.jpg" />
       <div className="fixed inset-0 bg-black/50 z-[1]" />
       <div className="relative z-10 bg-white/10 backdrop-blur-md p-8 rounded-2xl w-full max-w-sm space-y-5 border border-white/20 shadow-xl">
         <div className="text-center">

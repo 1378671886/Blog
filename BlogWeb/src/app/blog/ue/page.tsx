@@ -10,7 +10,7 @@ export default function UEPage() {
 
   return (
     <div className="relative">
-      <VideoBackground src="/videos/柠檬_1.mp4" />
+      <VideoBackground src="/images/bg-blog.jpg" />
 
       <div className="relative z-10">
         {/* 导航栏 */}
