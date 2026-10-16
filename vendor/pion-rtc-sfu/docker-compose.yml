@@ -1,0 +1,8 @@
+services:
+  sfu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pion-sfu
+    restart: always
+    network_mode: host
